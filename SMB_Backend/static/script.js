@@ -1,4 +1,4 @@
-const BASE_URL = "http://10.241.114.172:5000";
+const BASE_URL = window.location.origin;
 
 // ===== TOAST =====
 function showToast(msg) {
@@ -9,58 +9,71 @@ function showToast(msg) {
 }
 
 // ===== SET ALARM =====
-document.getElementById("alarmForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+function setupForm() {
+  const form = document.getElementById("alarmForm");
+  if (!form) return;
 
-  const hour = document.getElementById("hour").value;
-  const minute = document.getElementById("minute").value;
-  const compartment = document.getElementById("compartment").value;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const res = await fetch(BASE_URL + "/setAlarm", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      hour: parseInt(hour),
-      minute: parseInt(minute),
-      compartment: parseInt(compartment),
-    }),
-  });
+    const hour = document.getElementById("hour").value;
+    const minute = document.getElementById("minute").value;
+    const compartment = document.getElementById("compartment").value;
 
-  if (res.ok) {
-    showToast("Alarm Added ✅");
-    loadAlarms();
-  }
-});
+    try {
+      const res = await fetch(BASE_URL + "/setAlarm", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          hour: parseInt(hour),
+          minute: parseInt(minute),
+          compartment: parseInt(compartment),
+        }),
+      });
 
-// ===== LOAD ALARMS =====
-async function loadAlarms() {
-  const res = await fetch(BASE_URL + "/getAlarms");
-  const data = await res.json();
-
-  const table = document.getElementById("alarmsTableBody");
-  table.innerHTML = "";
-
-  if (data.length === 0) {
-    table.innerHTML = `<tr><td colspan="4">No alarms</td></tr>`;
-    return;
-  }
-
-  data.forEach(alarm => {
-    const row = `
-      <tr>
-        <td>${alarm.hour}:${alarm.minute < 10 ? "0" : ""}${alarm.minute}</td>
-        <td>${alarm.compartment}</td>
-        <td>${alarm.status}</td>
-        <td>
-          <button onclick="deleteAlarm(${alarm.id})">Delete</button>
-        </td>
-      </tr>
-    `;
-    table.innerHTML += row;
+      if (res.ok) {
+        showToast("Alarm Added ✅");
+        loadAlarms();
+      }
+    } catch (err) {
+      console.log("Error:", err);
+    }
   });
 }
 
-// ===== DELETE (TEMP DISABLED IF ROUTE NOT EXISTS) =====
+// ===== LOAD ALARMS =====
+async function loadAlarms() {
+  try {
+    const res = await fetch(BASE_URL + "/getAlarms");
+    const data = await res.json();
+
+    const table = document.getElementById("alarmsTableBody");
+    table.innerHTML = "";
+
+    if (data.length === 0) {
+      table.innerHTML = `<tr><td colspan="4">No alarms</td></tr>`;
+      return;
+    }
+
+    data.forEach(alarm => {
+      const row = `
+        <tr>
+          <td>${alarm.hour}:${alarm.minute < 10 ? "0" : ""}${alarm.minute}</td>
+          <td>${alarm.compartment}</td>
+          <td>${alarm.status}</td>
+          <td>
+            <button onclick="deleteAlarm(${alarm.id})">Delete</button>
+          </td>
+        </tr>
+      `;
+      table.innerHTML += row;
+    });
+  } catch (err) {
+    console.log("Load alarms failed:", err);
+  }
+}
+
+// ===== DELETE =====
 async function deleteAlarm(id) {
   const confirmDelete = confirm("Delete this alarm?");
   if (!confirmDelete) return;
@@ -122,6 +135,7 @@ async function loadAnalytics() {
 
 // ===== INIT =====
 window.onload = () => {
+  setupForm();
   loadAlarms();
   loadLogs();
   loadAnalytics();
