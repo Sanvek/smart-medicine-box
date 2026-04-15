@@ -1,8 +1,11 @@
+// ===== BASE URL FIX (CRITICAL) =====
 const BASE_URL = window.location.origin;
 
 // ===== TOAST =====
 function showToast(msg) {
   const toast = document.getElementById("toast");
+  if (!toast) return;
+
   toast.innerText = msg;
   toast.style.display = "block";
   setTimeout(() => (toast.style.display = "none"), 2000);
@@ -23,7 +26,7 @@ function setupForm() {
     try {
       const res = await fetch(BASE_URL + "/setAlarm", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hour: parseInt(hour),
           minute: parseInt(minute),
@@ -34,9 +37,13 @@ function setupForm() {
       if (res.ok) {
         showToast("Alarm Added ✅");
         loadAlarms();
+      } else {
+        showToast("Failed to add ❌");
       }
+
     } catch (err) {
-      console.log("Error:", err);
+      console.log("SET ALARM ERROR:", err);
+      showToast("Server error ❌");
     }
   });
 }
@@ -48,9 +55,11 @@ async function loadAlarms() {
     const data = await res.json();
 
     const table = document.getElementById("alarmsTableBody");
+    if (!table) return;
+
     table.innerHTML = "";
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       table.innerHTML = `<tr><td colspan="4">No alarms</td></tr>`;
       return;
     }
@@ -68,8 +77,9 @@ async function loadAlarms() {
       `;
       table.innerHTML += row;
     });
+
   } catch (err) {
-    console.log("Load alarms failed:", err);
+    console.log("LOAD ALARMS ERROR:", err);
   }
 }
 
@@ -78,15 +88,21 @@ async function deleteAlarm(id) {
   const confirmDelete = confirm("Delete this alarm?");
   if (!confirmDelete) return;
 
-  const res = await fetch(BASE_URL + "/deleteAlarm/" + id, {
-    method: "DELETE"
-  });
+  try {
+    const res = await fetch(BASE_URL + "/deleteAlarm/" + id, {
+      method: "DELETE"
+    });
 
-  if (res.ok) {
-    showToast("Deleted ✅");
-    loadAlarms();
-  } else {
-    showToast("Delete failed ❌");
+    if (res.ok) {
+      showToast("Deleted ✅");
+      loadAlarms();
+    } else {
+      showToast("Delete failed ❌");
+    }
+
+  } catch (err) {
+    console.log("DELETE ERROR:", err);
+    showToast("Server error ❌");
   }
 }
 
@@ -97,20 +113,23 @@ async function loadLogs() {
     const data = await res.json();
 
     const logsDiv = document.getElementById("logsList");
+    if (!logsDiv) return;
+
     logsDiv.innerHTML = "";
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       logsDiv.innerHTML = `<div>No logs</div>`;
       return;
     }
 
-    data.reverse().forEach(log => {
+    data.slice().reverse().forEach(log => {
       logsDiv.innerHTML += `
         <div>⏰ ${log.time} | Box ${log.compartment} → ${log.status}</div>
       `;
     });
-  } catch {
-    console.log("Logs route not ready");
+
+  } catch (err) {
+    console.log("LOAD LOGS ERROR:", err);
   }
 }
 
@@ -122,15 +141,24 @@ async function loadAnalytics() {
 
     let taken = 0, missed = 0;
 
-    data.forEach(log => {
-      if (log.status === "taken") taken++;
-      if (log.status === "missed") missed++;
-    });
+    if (data && data.length > 0) {
+      data.forEach(log => {
+        if (log.status === "taken") taken++;
+        if (log.status === "missed") missed++;
+      });
+    }
 
-    document.getElementById("takenCount").innerText = taken;
-    document.getElementById("missedCount").innerText = missed;
-    document.getElementById("totalCount").innerText = data.length;
-  } catch {}
+    const takenEl = document.getElementById("takenCount");
+    const missedEl = document.getElementById("missedCount");
+    const totalEl = document.getElementById("totalCount");
+
+    if (takenEl) takenEl.innerText = taken;
+    if (missedEl) missedEl.innerText = missed;
+    if (totalEl) totalEl.innerText = data.length;
+
+  } catch (err) {
+    console.log("ANALYTICS ERROR:", err);
+  }
 }
 
 // ===== INIT =====
