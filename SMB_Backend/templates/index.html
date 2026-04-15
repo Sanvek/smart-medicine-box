@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Medicine Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">💊</div>
+        <div>
+          <h1>MedCare</h1>
+          <p>Smart Medicine Box</p>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-section="dashboard">Dashboard</button>
+        <button class="nav-item" data-section="alarms">Alarms</button>
+        <button class="nav-item" data-section="logs">Logs</button>
+        <button class="nav-item" data-section="analytics">Analytics</button>
+      </nav>
+
+      <div class="device-status-card">
+        <p class="label">Device Status</p>
+        <div class="status-row">
+          <span class="status-dot online"></span>
+          <span id="deviceStatusText">Connected</span>
+        </div>
+        <p class="subtext">Medicine box is active</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h2>Care Dashboard</h2>
+          <p class="topbar-subtitle">Monitor medicines, alarms, and adherence</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-btn" id="refreshBtn">Refresh</button>
+        </div>
+      </header>
+
+      <section class="hero-card">
+        <div class="hero-text">
+          <h3>Keep your loved ones on track</h3>
+          <p>
+            Set compartment alarms, track taken or missed doses, and monitor care
+            statistics from one place.
+          </p>
+        </div>
+        <div class="hero-badges">
+          <div class="hero-badge">
+            <span class="badge-title">Today</span>
+            <span class="badge-value" id="todaySummary">0 logs</span>
+          </div>
+          <div class="hero-badge">
+            <span class="badge-title">Upcoming</span>
+            <span class="badge-value" id="upcomingSummary">0 alarms</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid" id="dashboardSection">
+        <div class="stat-card">
+          <p class="stat-label">Taken Doses</p>
+          <h3 id="takenCount">0</h3>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Missed Doses</p>
+          <h3 id="missedCount">0</h3>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Pending Alarms</p>
+          <h3 id="pendingCount">0</h3>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Adherence</p>
+          <h3 id="adherenceRate">0%</h3>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel panel-wide" id="alarmsSection">
+          <div class="panel-header">
+            <div>
+              <h3>Manage Alarms</h3>
+              <p>Add, edit, or remove medicine reminders</p>
+            </div>
+          </div>
+
+          <form class="alarm-form" id="alarmForm">
+            <div class="form-row">
+              <div class="input-group">
+                <label for="hour">Hour</label>
+                <input id="hour" type="number" min="0" max="23" placeholder="08" required />
+              </div>
+              <div class="input-group">
+                <label for="minute">Minute</label>
+                <input id="minute" type="number" min="0" max="59" placeholder="30" required />
+              </div>
+              <div class="input-group">
+                <label for="compartment">Compartment</label>
+                <select id="compartment" required>
+                  <option value="">Select</option>
+                  <option value="1">Compartment 1</option>
+                  <option value="2">Compartment 2</option>
+                  <option value="3">Compartment 3</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <input type="hidden" id="editAlarmId" />
+              <button type="submit" class="primary-btn" id="saveAlarmBtn">Add Alarm</button>
+              <button type="button" class="secondary-btn" id="cancelEditBtn">Cancel Edit</button>
+            </div>
+          </form>
+
+          <div class="table-card">
+            <div class="table-head">
+              <h4>Scheduled Alarms</h4>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Compartment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="alarmsTableBody">
+                  <tr>
+                    <td colspan="4" class="empty-state">No alarms found</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="logsSection">
+          <div class="panel-header">
+            <div>
+              <h3>Recent Logs</h3>
+              <p>Latest activity from the medicine box</p>
+            </div>
+          </div>
+
+          <div class="logs-list" id="logsList">
+            <div class="empty-log-card">No logs available</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="analytics-grid" id="analyticsSection">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Care Insights</h3>
+              <p>Simple adherence analytics</p>
+            </div>
+          </div>
+
+          <div class="insight-cards">
+            <div class="insight-card">
+              <span>Best Performance</span>
+              <strong id="bestMetric">No data</strong>
+            </div>
+            <div class="insight-card">
+              <span>Needs Attention</span>
+              <strong id="attentionMetric">No data</strong>
+            </div>
+            <div class="insight-card">
+              <span>Total Actions</span>
+              <strong id="totalLogsCount">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Compartment Summary</h3>
+              <p>Dose behavior by compartment</p>
+            </div>
+          </div>
+
+          <div class="mini-stats" id="compartmentStats">
+            <div class="mini-stat">Compartment 1: 0</div>
+            <div class="mini-stat">Compartment 2: 0</div>
+            <div class="mini-stat">Compartment 3: 0</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
