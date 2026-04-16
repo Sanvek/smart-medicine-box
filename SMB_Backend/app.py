@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import sqlite3
+import pytz   # ✅ ADD THIS
 
 app = Flask(__name__)
 
@@ -87,15 +88,21 @@ def get_alarms():
 
 
 #  GET NEXT ALARM (ONLY PENDING)
+
+
 @app.route('/getNextAlarm')
 def get_next_alarm():
-    now = datetime.now()
+    # ✅ FORCE IST TIMEZONE
+    ist = pytz.timezone("Asia/Kolkata")
+    now = datetime.now(ist)
+
     current_minutes = now.hour * 60 + now.minute
+
+    print("Current IST Time:", now.hour, ":", now.minute)  # 🔥 DEBUG
 
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
-    # ONLY pending alarms
     cursor.execute("""
         SELECT hour, minute, compartment 
         FROM alarms 
@@ -104,6 +111,8 @@ def get_next_alarm():
     
     alarms = cursor.fetchall()
 
+    print("All alarms:", alarms)  # 🔥 DEBUG
+
     best = None
     min_diff = 99999
 
@@ -111,11 +120,18 @@ def get_next_alarm():
         alarm_minutes = h * 60 + m
         diff = alarm_minutes - current_minutes
 
+        print(f"Checking → {h}:{m} diff={diff}")  # 🔥 DEBUG
+        
+        if diff < 0:
+            diff += 24 * 60  # Wrap around to the next day
+
         if diff >= 0 and diff < min_diff:
             min_diff = diff
             best = (h, m, c)
 
     conn.close()
+
+    print("Selected alarm:", best)  # 🔥 DEBUG
 
     if best:
         return {
