@@ -140,21 +140,60 @@ async function loadAnalytics() {
     const data = await res.json();
 
     let taken = 0, missed = 0;
+    let compartmentStats = {1:0, 2:0, 3:0};
 
     if (data && data.length > 0) {
       data.forEach(log => {
-        if (log.status === "taken") taken++;
+        if (log.status === "taken") {
+          taken++;
+          compartmentStats[log.compartment]++;
+        }
         if (log.status === "missed") missed++;
       });
     }
 
+    // ===== EXISTING ELEMENTS =====
     const takenEl = document.getElementById("takenCount");
     const missedEl = document.getElementById("missedCount");
-    const totalEl = document.getElementById("totalCount");
 
     if (takenEl) takenEl.innerText = taken;
     if (missedEl) missedEl.innerText = missed;
+
+    // ===== FIXED TOTAL COUNT =====
+    const totalElOld = document.getElementById("totalCount"); // keep old (no removal)
+    if (totalElOld) totalElOld.innerText = data.length;
+
+    const totalEl = document.getElementById("totalLogsCount"); // correct one
     if (totalEl) totalEl.innerText = data.length;
+
+    // ===== BEST / ATTENTION =====
+    let best = "No data";
+    let attention = "No data";
+
+    if (data.length > 0) {
+      let maxComp = Object.keys(compartmentStats).reduce((a, b) => 
+        compartmentStats[a] > compartmentStats[b] ? a : b
+      );
+
+      best = "Compartment " + maxComp;
+      attention = missed > 0 ? "Missed doses present" : "All taken";
+    }
+
+    const bestEl = document.getElementById("bestMetric");
+    const attEl = document.getElementById("attentionMetric");
+
+    if (bestEl) bestEl.innerText = best;
+    if (attEl) attEl.innerText = attention;
+
+    // ===== COMPARTMENT SUMMARY =====
+    const compDiv = document.getElementById("compartmentStats");
+    if (compDiv) {
+      compDiv.innerHTML = `
+        <div class="mini-stat">Compartment 1: ${compartmentStats[1]}</div>
+        <div class="mini-stat">Compartment 2: ${compartmentStats[2]}</div>
+        <div class="mini-stat">Compartment 3: ${compartmentStats[3]}</div>
+      `;
+    }
 
   } catch (err) {
     console.log("ANALYTICS ERROR:", err);
