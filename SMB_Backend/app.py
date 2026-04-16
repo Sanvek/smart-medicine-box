@@ -224,5 +224,18 @@ def delete_alarm(id):
 
     return jsonify({"message": "Alarm deleted"})
 
+@app.route('/clearDB')
+def clear_db():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM alarms")
+    cursor.execute("DELETE FROM logs")
+
+    conn.commit()
+    conn.close()
+
+    return "Database cleared"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
